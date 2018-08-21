@@ -1,14 +1,41 @@
 version: "3"
 services:
+    
+    db:
+        image: postgres
+        restart: always
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres-config
+            - postgres-data
+            - postgres-logs
+
     aggregatorservice:
-        image: python:2.7
-        build: .
+        build: secuwear_webapp/.
         command: python secuwear_webapp/manage.py migrate --noinput
         command: python secuwear_webapp/manage.py runserver 0.0.0.0:4000
         volumes:
-            - .:/code
+            - ./secuwear_webapp/:/code/secuwear_webapp/
         ports:
             - "4000:4000"
+
+
+
+
+    secuwearserver:
+        build: .
+        command: python secuwear_backend/manage.py migrate --noinput
+        command: python secuwear_backend/manage.py runserver 0.0.0.0:8000
+        volumes:
+            - ./secuwear_backend/:/code/secuwear_backend/
+        ports:
+            - "8000:8000"
+        depends_on:
+            - db
+
+
+
 
 
 

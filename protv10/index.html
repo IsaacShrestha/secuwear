@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<!-- libraries used: dcjs, crossfilter, datatables, d3js -->
+<html>
+	<head>
+		<title>SecuWear Data Display</title>
+		<link rel="stylesheet" href="dc.css" />
+		<!-- links for datatable -->
+		<link rel="stylesheet" type="text/css" href="dataTables.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.js"></script>
+		
+		<!-- links for bootstrap -->
+		<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+		<script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<h3 class="header">SecuWear Visualization Prototype</h3>
+				</div>
+			</div>
+			
+			<div class="row">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 nav">&nbsp;</div>
+			</div>
+			
+			<div class="clean">&nbsp;</div>
+			
+			<div class="row">
+				<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
+					<div class="dc-data-count strong">
+				
+						<span class="filter-count"></span> selected out of <span class="total-count"></span> events | <a href="javascript:dc.filterAll(); dc.renderAll();">Reset All</a>
+				
+					</div>
+				</div>
+			</div>
+			
+			<div class="clean">&nbsp;</div>
+			
+			<div class="row">
+				<div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+					<div class="domain" id="domain">
+						<div class="graph-header">
+							<p><strong class="strong">Domains</strong> <br/>
+								<span class="reset" style="display: none;">Selected: <span class="filter"></span></span>
+							<a class="reset" href="javascript:domainChart.filterAll();dc.redrawAll();" style="display: none;">Reset</a>
+							
+							</p>
+						</div>						
+					</div>
+				</div>
+				<div class="col-lg-9 col-md-9 col-sm-12 col-xs-12">
+					<div class="scatter-plot dc-chart" id="monthly-move-chart" style="100%;">
+						<div class="graph-header">
+							<strong class="strong">Select time range to zoom in</strong> <br/>
+							<span class="reset" style="display: none;">Range: <span class="filter"></span></span>
+						<a class="reset" href="javascript:moveChart.filterAll();volumeChart.filterAll();dc.redrawAll();"
+						   style="display: none;">Reset</a>
+						</div>
+					</div>
+					<div class="scatter-plot">
+						<div id="monthly-volume-chart" style="width: 100%;"></div>
+					</div>
+				</div>
+				
+			</div><!-- end of row -->
+			
+			<div class="clean">&nbsp;</div>
+			
+			<div class="row">
+				<div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+					<div class="events" id="events" style="100%;">
+						<div class="graph-header">
+							<p>
+								<strong class="strong">Events</strong> <br/>
+								<span class="reset" style="display: none;">Selected: <span class="filter"></span></span>
+								<a class="reset" href="javascript:eventChart.filterAll();dc.redrawAll();" style="display: none;">Reset</a>
+							</p>
+						</div>
+						<div class="clearfix"></div>
+					</div>
+				</div>
+				<div class="col-lg-9 col-md-9 col-sm-12 col-xs-12 table-data">
+					<table id="data-table" class="table table-hover sortable" border='0' cellspacing='0' cellpadding='5' style="100%;">
+					<thead>
+						<tr>
+							<th>Timestamp</th>
+							<th>eventid</th>
+							<th>event-type</th>
+							<th>event</th>
+							<th>codereference</th>
+							<th>domain</th>
+							<th>pcap-id</th>
+							<th>cap-length</th>
+							<th>highest-layer</th>
+							<th>epoch-time</th>
+							<th>arrival-time</th>
+							<th>access-address</th>
+							<th>adv-address</th>
+							<th>adv-header</th>
+							<th>crc</th>
+							<th>ppi-flags</th>
+							<th>ppi-version</th>
+							<th>ppi-dlt</th>
+							<th>ppi-header</th>
+							<th>ppi-reserved</th>
+						</tr>
+					</thead>					
+				</table>
+				</div>
+			</div>
+		</div><!-- end of container-fluid -->
+		
+		
+		
+		
+		<script src="crossfilter.js"></script>
+		<script src="https://d3js.org/d3.v3.min.js"></script>
+		<script src="dc.js"></script>
+		<script>
+			var domainChart = dc.pieChart("#domain"),
+				eventChart = dc.rowChart("#events"),
+				moveChart = dc.scatterPlot('#monthly-move-chart'),
+				volumeChart = dc.barChart('#monthly-volume-chart'),
+				visCount = dc.dataCount(".dc-data-count");
+				//visTable = dc.dataTable(".dc-data-table");
+				
+			d3.csv("events.csv", function(err, data){
+				if(err) throw err;
+				
+				data.forEach(function (d) {
+					d.Timestamp = new Date(d.Timestamp);
+				});
+				
+				
+				
+			var ndx = crossfilter(data);
+			var all = ndx.groupAll();
+			
+			//Ticks
+			var ticks = [0,1,2];
+			var tickLabels = ['Wearable','Webapp','Mobile'];
+			
+			//Dimensions
+			var domainDim = ndx.dimension(function(d){ return d.domain;});
+			var eventDim = ndx.dimension(function(d){ return d.event;});
+			var timeDim = ndx.dimension(function (d) { return d.Timestamp; });
+			var runDim = ndx.dimension(function(d){ return [+d.Timestamp, +d.domainVal]});
+			
+			//Groups
+			var domainGroup=domainDim.group();
+			var eventGroup = eventDim.group();
+			var timeGroup = timeDim.group();
+			var runGroup = runDim.group();
+			
+			
+			
+			domainChart
+					.innerRadius(40)
+					.width(350)
+					.dimension(domainDim)
+					.group(domainGroup)
+					.ordinalColors(['#FF6600','#666666','#0066FF']);
+					
+			eventChart
+				.width(350)
+				.dimension(eventDim)
+				.group(eventGroup)
+				.data(function(group){ return group.top(100); })
+				.elasticX(true);
+				
+			moveChart /* dc.lineChart('#monthly-move-chart', 'chartGroup') */
+				//.renderArea(true)
+				.height(150)
+				.brushOn(false)
+				.symbolSize(4)
+				.clipPadding(10)
+				.transitionDuration(1000)
+				.margins({top: 30, right: 50, bottom: 25, left: 40})
+				.dimension(runDim)
+				.group(runGroup)
+				.mouseZoomable(true)
+				//.rangeChart(volumeChart) //this will remove the unselected area from volume chart
+				.x(d3.time.scale().domain([new Date(1430458980000), new Date(1431662760000)]))
+				.round(d3.time.minute.round)
+				.xUnits(d3.time.minute)
+				.elasticY(true)
+				.renderHorizontalGridLines(true)
+				.yAxis().ticks(2).tickFormat(function(d, i){ 
+						return tickLabels[i];
+					})
+				
+	
+			volumeChart /* dc.barChart('#monthly-volume-chart', 'chartGroup'); */
+				.height(60)
+				.margins({top: 0, right: 50, bottom: 20, left: 40})
+				.dimension(timeDim)
+				.group(timeGroup)
+				.centerBar(true)
+				.gap(2)
+				.x(d3.time.scale().domain([new Date(1430458980000), new Date(1431662760000)]))
+				.round(d3.time.minute.round)
+				.alwaysUseRounding(true)
+				.xUnits(d3.time.minute)
+				.yAxis().ticks(0);
+				
+			visCount
+				.dimension(ndx)
+				.group(all);
+				
+			var visTable = $("#data-table").dataTable({
+					"fixedHeader": true,
+					"bPaginate": true,
+					"bLengthChange": true,
+					"bFilter": true,
+					"bSort": true,
+					"bInfo": true,
+					"bAutoWidth": true,
+					"bDeferRender": true,
+					"aaData": timeDim.top(Infinity),
+					"bDestroy": true,
+					"aoColumns": [
+						{"mData": "Timestamp", "sDefaultContent": ""},
+						{"mData": "eventid", "sDefaultContent": ""},
+						{"mData": "event-type", "sDefaultContent": ""},
+						{"mData": "event", "sDefaultContent": ""},
+						{"mData": "codereference", "sDefaultContent": ""},
+						{"mData": "domain", "sDefaultContent": ""},
+						{"mData": "pcap-id", "sDefaultContent": ""},
+						{"mData": "cap-length", "sDefaultContent": ""},
+						{"mData": "highest-layer", "sDefaultContent": ""},
+						{"mData": "epoch-time", "sDefaultContent": ""},
+						{"mData": "arrival-time", "sDefaultContent": ""},
+						{"mData": "access-address", "sDefaultContent": ""},
+						{"mData": "adv-address", "sDefaultContent": ""},
+						{"mData": "adv-header", "sDefaultContent": ""},
+						{"mData": "crc", "sDefaultContent": ""},
+						{"mData": "ppi-flags", "sDefaultContent": ""},
+						{"mData": "ppi-version", "sDefaultContent": ""},
+						{"mData": "ppi-dlt", "sDefaultContent": ""},
+						{"mData": "ppi-header", "sDefaultContent": ""},
+						{"mData": "ppi-reserved", "sDefaultContent": ""}
+					]
+				});
+				
+				//to adjust table according to selection in other graphical displays
+				function RefreshTable(){
+					dc.events.trigger(function(){
+						alldata = timeDim.top(Infinity);
+						datatable.fnClearTable();
+						datatable.fnAddData(alldata);
+						datatable.fnDraw();
+					});
+				}
+				
+			//to adjust table according to selection in other graphical displays
+				function RefreshTable(){
+					dc.events.trigger(function(){
+						alldata = timeDim.top(Infinity);
+						visTable.fnClearTable();
+						visTable.fnAddData(alldata);
+						visTable.fnDraw();
+					});
+				}
+				
+				for(var i=0; i< dc.chartRegistry.list().length; i++){
+					var chartI = dc.chartRegistry.list()[i];
+					chartI.on("filtered", RefreshTable);
+				}
+			dc.renderAll();
+				
+			
+			});
+		</script>
+	</body>
+</html>

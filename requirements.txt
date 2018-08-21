@@ -5,3 +5,4 @@ djangorestframework
 markdown
 django-filter==1.1
 djangorestframework-jsonapi
+pyshark==0.3.8

@@ -1,0 +1,131 @@
+<html>
+	<head>
+		<title>Datatable and Crossfilter</title>
+		<link rel="stylesheet" href="dc.css" />
+		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.15/css/jquery.dataTables.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.js"></script>
+	</head>
+	<body>
+		
+		<div class="table-data ">
+				<div class="table-data-header"></div>
+				<table id="data-table" class="table table-hover sortable" border='0' cellspacing='0' cellpadding='5'>
+					<thead>
+						<tr>
+							<th>Timestamp</th>
+							<th>eventid</th>
+							<th>event-type</th>
+							<th>event</th>
+							<th>codereference</th>
+							<th>domain</th>
+							<th>pcap-id</th>
+							<th>cap-length</th>
+							<th>layers</th>
+							<th>highest-layer</th>
+							<th>epoch-time</th>
+							<th>arrival-time</th>
+							<th>access-address</th>
+							<th>adv-address</th>
+							<th>adv-header</th>
+							<th>crc</th>
+							<th>ppi-flags</th>
+							<th>ppi-version</th>
+							<th>ppi-dlt</th>
+							<th>ppi-header</th>
+							<th>ppi-reserved</th>
+						</tr>
+					</thead>
+					
+				</table>
+		</div>
+	
+	
+		<script src="crossfilter.js"></script>
+		<script src="https://d3js.org/d3.v3.min.js"></script>
+		<script src="dc.js"></script>
+		<script>
+			//var visTable = dc.dataTable("#data-table");
+			
+			d3.csv("events.csv", function(err, data){
+				if(err) throw err;
+								
+				data.forEach(function (d) {
+					d.Timestamp = new Date(d.Timestamp);
+				});
+				
+				var ndx = crossfilter(data);
+				var all = ndx.groupAll();
+				
+				var timeDim = ndx.dimension(function (d) { return d.Timestamp; });
+				var timeGroup = timeDim.group();
+				
+				var visTable = $("#data-table").dataTable({
+					"bPaginate": true,
+					"bLengthChange": true,
+					"bFilter": true,
+					"bSort": true,
+					"bInfo": true,
+					"bAutoWidth": true,
+					"bDeferRender": true,
+					"aaData": timeDim.top(Infinity),
+					"bDestroy": true,
+					"aoColumns": [
+						{"mData": "Timestamp", "sDefaultContent": ""},
+						{"mData": "eventid", "sDefaultContent": ""},
+						{"mData": "event-type", "sDefaultContent": ""},
+						{"mData": "event", "sDefaultContent": ""},
+						{"mData": "codereference", "sDefaultContent": ""},
+						{"mData": "domain", "sDefaultContent": ""},
+						{"mData": "pcap-id", "sDefaultContent": ""},
+						{"mData": "cap-length", "sDefaultContent": ""},
+						{"mData": "layers", "sDefaultContent": ""},
+						{"mData": "highest-layer", "sDefaultContent": ""},
+						{"mData": "epoch-time", "sDefaultContent": ""},
+						{"mData": "arrival-time", "sDefaultContent": ""},
+						{"mData": "access-address", "sDefaultContent": ""},
+						{"mData": "adv-address", "sDefaultContent": ""},
+						{"mData": "adv-header", "sDefaultContent": ""},
+						{"mData": "crc", "sDefaultContent": ""},
+						{"mData": "ppi-flags", "sDefaultContent": ""},
+						{"mData": "ppi-version", "sDefaultContent": ""},
+						{"mData": "ppi-dlt", "sDefaultContent": ""},
+						{"mData": "ppi-header", "sDefaultContent": ""},
+						{"mData": "ppi-reserved", "sDefaultContent": ""}
+					]
+				});
+				
+				//to adjust table according to selection in other graphical displays
+				function RefreshTable(){
+					dc.events.trigger(function(){
+						alldata = countryDimension.top(Infinity);
+						datatable.fnClearTable();
+						datatable.fnAddData(alldata);
+						datatable.fnDraw();
+					});
+				}
+				
+				for(var i=0; i< dc.chartRegistry.list().length; i++){
+					var chartI = dc.chartRegistry.list()[i];
+					chartI.on("filtered", RefreshTable);
+				}
+			
+			dc.renderAll();
+				
+			});
+		</script>
+		<script>
+			$(document).ready(function(){
+				$('#data-table').dataTable(/*{
+					bSort: false,
+					aoColumns: [ { sWidth: "45%" }, { sWidth: "45%" }, { sWidth: "10%", bSearchable: false, bSortable: false }],
+					 "scrollY":"500px",
+					 "scrollCollapse": true,
+					 "info":true,
+					 "paging":true
+				}*/);
+			});
+		</script>
+		
+	</body>
+</html>

@@ -13,7 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 
 
 # Set the working dir
-RUN mkdir /code
+# RUN mkdir /code
 WORKDIR /code
 
 # Copy project
@@ -22,6 +22,16 @@ COPY . /code/
 # Install dependencies
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+
+
+
+
+
+
+
+
+
+
 
 
 
