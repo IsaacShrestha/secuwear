@@ -1,3 +1,0 @@
-[console_scripts]
-pcaps = src.main:main
-

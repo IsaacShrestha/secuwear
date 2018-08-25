@@ -2,7 +2,7 @@
 
 import pyshark, requests, sys, os, re, pprint, ast, json
 from random import randint
-import datetime, time
+import datetime
 
 """Pcaps Object"""
 class Pcaps:
@@ -143,15 +143,11 @@ class Pcaps:
 		btledata = '' 
 		crc = ''
 		arrivaltime = ''
-		protocol = ''
-		data = ''
-		eventUrl='http://localhost:8000/api/events'
-
+		run = 'http://localhost:8000/api/runs/'+str(run_id)
 		p = re.compile('(.*)\s+.*:\s+(\S+)\s+.*:\s+(\S+)\s+\S+:\s+(.*)\s+.*:\s+(.*)\s+(.*)\s+\S+\s+(.*)\s+\S+\s+(.*)\s+\S+\s+(.*)\s+\S+\s+(.*)')
 		m = p.findall(handle_path)
-		
 		for row in m:
-			#print(time.time())
+			# print row
 			advertisingheader = row[0]
 			channelindex = row[1]
 			btletype = row[2]
@@ -162,47 +158,11 @@ class Pcaps:
 			companydata = row[7]
 			btledata = row[8]
 			crc = row[9]
-			capturedTime = long((time.time()) * 1000)
-
-			print('#########')
-			print 'btletype ='+str(btletype)
-			print 'length='+str(len(btletype))
-			print('advertisingheader', advertisingheader)
-			print('channelindex', channelindex)
-			print('btletype', btletype)
-			print('advertisingaddress', advertisingaddress)
-			print('advertisingdata', advertisingdata)
-			print('advertisingtype', advertisingtype)
-			print('company', company)
-			print('companydata', companydata)
-			print('btledata', btledata)
-			print('crc', crc)
-			print('########')
-
-
-			if 'L2CAP start' in advertisingheader:
-				protocol = 'ATT'
-			else:
-				protocol = 'LE LL'
-
-
-			print('protocol='+protocol)
-
-			#advertising address of samsung tablet
-			if ('08 00 04 00 1b 1f 00 04 81 00 f4 00' in advertisingaddress) or (advertisingaddress == '') or (btletype == '0') or (btletype == '1'):
-				size = company[-8:]
-				event = advertisingheader
-			else:
-				size = advertisingheader[-8:]
-				event = btletype
-
-			#find sequence number
-			btle_data = dict( run=59, systemTime=capturedTime, event=event, eventtype=protocol, data=advertisingdata, codereference='sequence number:', size=size, domain='bluetooth')
-
-			btlePostResponse = self.client.post(eventUrl, data=btle_data, headers=dict(Referer=eventUrl))
+			arrivaltime = datetime.datetime.now()
+			btle_data = dict( run=run, arrivaltime=arrivaltime, advertisingheader=advertisingheader, channelindex=channelindex, btletype=btletype, advertisingaddress=advertisingaddress, advertisingdata=advertisingdata, advertisingtype=advertisingtype, company=company, companydata=companydata, btledata=btledata, crc=crc, domain='wearable')
+			btlePostResponse = self.client.post(self.btleUrl, data=btle_data, cookies=loginResponse.cookies, headers=dict(Referer=self.btleUrl))
 			btle_data = ''
 			btlePostResponse = ''
-		
 
 
 

